@@ -22,17 +22,17 @@ module.exports = {
     const betAmount = parseInt(args[0], 10);
 
     if (isNaN(betAmount) || betAmount <= 0) {
-      return api.sendMessage("⚠️ Please enter a valid bet amount.", event.threadID);
+      return api.sendMessage("Please enter a valid bet amount.", event.threadID);
     }
 
     // Retrieve user data and check if the user has enough balance
     const userData = await getUserData(event.senderID);
     if (!userData || userData.balance < betAmount) {
-      return api.sendMessage("❌ You don't have enough coins to place this bet.", event.threadID);
+      return api.sendMessage("You don't have enough coins to place this bet.", event.threadID);
     }
 
     // Send an initial spinning message
-    let spinningMessage = await api.sendMessage("🎰 Spinning... 🍒 🍋 🍊", event.threadID);
+    let spinningMessage = await api.sendMessage("Spinning... 🍒 🍋 🍊", event.threadID);
 
     // Define slot symbols and delay for the spinning effect
     const symbols = ["🍒", "🍋", "🍊", "🍉", "🍇", "🍓", "7️⃣"];
@@ -43,7 +43,7 @@ module.exports = {
       const slot1 = symbols[Math.floor(Math.random() * symbols.length)];
       const slot2 = symbols[Math.floor(Math.random() * symbols.length)];
       const slot3 = symbols[Math.floor(Math.random() * symbols.length)];
-      api.sendMessage(`🎰 Spinning... ${slot1} ${slot2} ${slot3}`, event.threadID, spinningMessage.messageID);
+      api.sendMessage(`Spinning... ${slot1} ${slot2} ${slot3}`, event.threadID, spinningMessage.messageID);
       await delay(100); // Adjust delay to 100 ms for faster spinning
     }
 
@@ -64,13 +64,13 @@ module.exports = {
     let payout = 0;
 
     if (slot1 === slot2 && slot2 === slot3) {
-      resultMessage = `🎉 **Muntaha Slot Machine**\nCongratulations! You hit the jackpot! ${slot1} ${slot2} ${slot3}`;
+      resultMessage = `🎉 Congratulations! You hit the jackpot! ${slot1} ${slot2} ${slot3}`;
       payout = prizes.jackpot;
     } else if (slot1 === slot2 || slot2 === slot3 || slot1 === slot3) {
-      resultMessage = `✨ **Muntaha Slot Machine**\nAlmost! You got two matching symbols. ${slot1} ${slot2} ${slot3}`;
+      resultMessage = `✨ Almost! You got two matching symbols. ${slot1} ${slot2} ${slot3}`;
       payout = prizes.twoMatching;
     } else {
-      resultMessage = `😢 **Muntaha Slot Machine**\nBetter luck next time! ${slot1} ${slot2} ${slot3}`;
+      resultMessage = `😢 Better luck next time! ${slot1} ${slot2} ${slot3}`;
       payout = -betAmount; // Loss amount
     }
 
