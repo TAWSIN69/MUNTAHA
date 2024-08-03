@@ -1,88 +1,88 @@
 module.exports = {
   config: {
     name: "slot",
-    aliases: ["slots", "slotmachine"],
-    version: "1.4",
-    author: "--USER--",
-    role: 0,
+    version: "1.2",
+    author: "Abdul Kaiyum",
     shortDescription: {
-      en: "Play a slot machine game with a spinning animation and betting."
+      en: "Slot game",
     },
     longDescription: {
-      en: "Bet an amount to spin the slot machine. Watch the spinning animation and see if you win!"
+      en: "Slot game.",
     },
-    category: "Fun",
-    guide: {
-      en: "Use {p}slot <amount> to bet on the slot machine game."
-    }
+    category: "Game",
   },
-  onStart: async function ({ api, event, getUserData, updateUserData }) {
-    // Parse the bet amount from the command arguments
-    const args = event.body.trim().split(/ +/).slice(1);
-    const betAmount = parseInt(args[0], 10);
+  langs: {
+    en: {
+      invalid_amount: "Enter a valid and positive amount to have a chance to win double",
+      not_enough_money: "Duroo mia dure jaw jaiga jomi bikre koro ga🥱 , TK nai ayshe slot khalbo ",
+      spin_message: "Spinning...",
+      win_message: "Ar koto khalban to borolok'ss to hoiajaitacho $%1, !",
+      lose_message: "You lost $%1, thak kanna koiro na 🐸.",
+      jackpot_message: "Jackpot! Miste nia aysho 💗You won $%1 with three %2 symbols, buddy!",
+    },
+  },
+  onStart: async function ({ args, message, event, envCommands, usersData, commandName, getLang }) {
+    const { senderID } = event;
+    const userData = await usersData.get(senderID);
+    const amount = parseInt(args[0]);
 
-    if (isNaN(betAmount) || betAmount <= 0) {
-      return api.sendMessage("Please enter a valid bet amount.", event.threadID);
+    if (isNaN(amount) || amount <= 0) {
+      return message.reply(getLang("invalid_amount"));
     }
 
-    // Retrieve user data and check if the user has enough balance
-    const userData = await getUserData(event.senderID);
-    if (!userData || userData.balance < betAmount) {
-      return api.sendMessage("You don't have enough coins to place this bet.", event.threadID);
+    if (amount > userData.money) {
+      return message.reply(getLang("not_enough_money"));
     }
 
-    // Send an initial spinning message
-    let spinningMessage = await api.sendMessage("Spinning... 🍒 🍋 🍊", event.threadID);
+    const fruitEmojis = ["🍒", "🍇", "🍊", "🍉", "🍎", "🍓", "🍏", "🍌"];
 
-    // Define slot symbols and delay for the spinning effect
-    const symbols = ["🍒", "🍋", "🍊", "🍉", "🍇", "🍓", "7️⃣"];
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-    // Simulate the spinning animation
-    for (let i = 0; i < 10; i++) {
-      const slot1 = symbols[Math.floor(Math.random() * symbols.length)];
-      const slot2 = symbols[Math.floor(Math.random() * symbols.length)];
-      const slot3 = symbols[Math.floor(Math.random() * symbols.length)];
-      api.sendMessage(`Spinning... ${slot1} ${slot2} ${slot3}`, event.threadID, spinningMessage.messageID);
-      await delay(100); // Adjust delay to 100 ms for faster spinning
-    }
+    const isSlotWin = Math.random() < 0.05;  
+    const isSlot2Win = Math.random() < 0.3;  
+    const isSlot3Win = Math.random() < 0.02;  
 
-    // Generate final slot result
-    const slot1 = symbols[Math.floor(Math.random() * symbols.length)];
-    const slot2 = symbols[Math.floor(Math.random() * symbols.length)];
-    const slot3 = symbols[Math.floor(Math.random() * symbols.length)];
+    const slot1 = isSlotWin ? "🍒" : fruitEmojis[Math.floor(Math.random() * fruitEmojis.length)];
+    const slot2 = isSlot2Win ? "🍒" : fruitEmojis[Math.floor(Math.random() * fruitEmojis.length)];
+    const slot3 = isSlot3Win ? "🍒" : fruitEmojis[Math.floor(Math.random() * fruitEmojis.length)];
 
-    // Define prize amounts
-    const prizes = {
-      jackpot: betAmount * 10,  // Jackpot payout
-      twoMatching: betAmount * 2, // Payout for two matching symbols
-      none: 0 // No payout for no matches
-    };
+    const winnings = calculateWinnings(slot1, slot2, slot3, amount);
 
-    // Determine the result
-    let resultMessage;
-    let payout = 0;
+    await usersData.set(senderID, {
+      money: userData.money + winnings,
+      data: userData.data,
+    });
 
-    if (slot1 === slot2 && slot2 === slot3) {
-      resultMessage = `🎉 Congratulations! You hit the jackpot! ${slot1} ${slot2} ${slot3}`;
-      payout = prizes.jackpot;
-    } else if (slot1 === slot2 || slot2 === slot3 || slot1 === slot3) {
-      resultMessage = `✨ Almost! You got two matching symbols. ${slot1} ${slot2} ${slot3}`;
-      payout = prizes.twoMatching;
-    } else {
-      resultMessage = `😢 Better luck next time! ${slot1} ${slot2} ${slot3}`;
-      payout = -betAmount; // Loss amount
-    }
+    const messageText = getSpinResultMessage(slot1, slot2, slot3, winnings, getLang);
 
-    // Update user data with the result
-    userData.balance = (userData.balance || 0) + payout;
-    await updateUserData(event.senderID, userData);
-
-    // Send the final result message
-    resultMessage += payout > 0 ? `\nYou won ${payout} coins!` : `\nYou lost ${-payout} coins.`;
-    api.sendMessage(resultMessage, event.threadID);
-
-    // Delete the spinning message to clean up
-    api.deleteMessage(spinningMessage.messageID);
-  }
+    return message.reply(messageText);
+  },
 };
+
+
+function calculateWinnings(slot1, slot2, slot3, betAmount) {
+  if (slot1 === "🍒" && slot2 === "🍒" && slot3 === "🍒") {
+    return betAmount * 3; 
+  } else if (slot1 === "🍇" && slot2 === "🍇" && slot3 === "🍇") {
+    return betAmount * 2; 
+  } else if (slot1 === slot2 && slot2 === slot3) {
+    return betAmount * 1.8; 
+  } else if (slot1 === slot2 || slot1 === slot3 || slot2 === slot3) {
+    return betAmount * 1.5;  
+  } else {
+    const penaltyRate = 0.1; 
+    const penaltyAmount = betAmount * penaltyRate;
+    return -betAmount - penaltyAmount;
+  }
+}
+
+function getSpinResultMessage(slot1, slot2, slot3, winnings, getLang) {
+  if (winnings > 0) {
+    if (slot1 === "🍓" && slot2 === "🍓" && slot3 === "🍓") {
+      return getLang("jackpot_message", winnings, "🍓");
+    } else {
+      return getLang("win_message", winnings) + ` [ ${slot1} | ${slot2} | ${slot3} ]`;
+    }
+  } else {
+    return getLang("lose_message", -winnings) + ` [ ${slot1} | ${slot2} | ${slot3} ]`;
+  }
+}
